@@ -18,6 +18,7 @@ public class CorsFilter implements Filter {
 
     static {
         ALLOWED_HOST_SET.add("http://api.naixuejiaoyu.com");
+        ALLOWED_HOST_SET.add(ALLOWED_HOST);
     }
 
     @Override
@@ -29,7 +30,23 @@ public class CorsFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest httpReq = (HttpServletRequest)servletRequest;
         HttpServletResponse httpResp = (HttpServletResponse)servletResponse;
-        filterChain.doFilter(servletRequest, servletResponse);
+
+        httpResp.addHeader("Access-Control-Allow-Credentials", "true");
+        if (httpReq.getMethod().equalsIgnoreCase("options")) {
+            // 探测请求
+            String originalUrl = httpReq.getHeader("Origin");
+            if (null != originalUrl && (ALLOWED_HOST_SET.contains(originalUrl))) { // 跨域白名单
+                httpResp.addHeader("Access-Control-Allow-Origin", httpReq.getHeader("Origin"));
+            } else {
+                httpResp.addHeader("Access-Control-Allow-Origin", ALLOWED_HOST);
+            }
+            httpResp.addHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+            httpResp.addHeader("Access-Control-Max-Age", "3600");
+            httpResp.addHeader("Content-Type", "text/plain");
+            return;
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
     }
 
     @Override
