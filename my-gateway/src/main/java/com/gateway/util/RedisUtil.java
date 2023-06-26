@@ -1,5 +1,6 @@
 package com.gateway.util;
 
+import com.gateway.filter.AntiSpamFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,10 @@ public class RedisUtil {
             jedisPool = new JedisPool(jedisPoolConfig, host, port, timeout, password);
         }
         log.info("act=end_init_redis_pool endTime=" + System.currentTimeMillis());
+    }
+
+    public RedisUtil() {
+
     }
 
     public static Jedis getJedis() throws Exception{

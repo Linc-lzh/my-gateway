@@ -1,9 +1,6 @@
 package com.gateway.config;
 
-import com.gateway.util.E2s;
-import com.gateway.util.RedisUtil;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Sets;
+import com.gateway.filter.AntiSpamFilter;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
@@ -15,11 +12,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
-
 import javax.annotation.PostConstruct;
-import java.util.HashSet;
-import java.util.Set;
 
 @Slf4j
 @Component
@@ -32,15 +25,8 @@ public class ZookeeperConfigItem {
     @Value("${zookeeper.config.port}")
     private String port;
 
-    private static volatile Set<String> deviceIdSet = Sets.newHashSet();
-    private static volatile Set<String> ipSet = Sets.newHashSet();//从缓存内获取的封禁IP
-    private static volatile Set<String> ipSet_1 = Sets.newHashSet();//从antispider服务获取的封禁IP
-    private static volatile Set<String> uidSet = Sets.newHashSet();
-    private static final long PERIOD = 60L * 1000;
-
     @PostConstruct
     private void init() throws Exception {
-        refreshCaches();
         initZookeeperServer();
     }
 
@@ -79,39 +65,8 @@ public class ZookeeperConfigItem {
             public void nodeChanged() throws Exception {
                 byte[] newData = nodeCache.getCurrentData().getData();
                 System.out.println("Refresh cache when node data changed: " + new String(newData));
-                refreshCaches();
+                AntiSpamFilter.refreshCaches();
             }
         });
-    }
-
-    public void refreshCaches() {
-        /* 类加载时更新缓存 */
-        deviceIdSet = getUpdateCache("spam:deviceIds");
-        ipSet = getUpdateCache("spam:ips");
-        uidSet = getUpdateCache("spam:uids");
-    }
-
-    private Set<String> getUpdateCache(String key) {
-        String logStr = "antispiderutil update " + key;
-        Jedis jedis = null;
-        String redisKey = key;
-        Set<String> container = new HashSet<String>();
-        try {
-            Stopwatch stopwatch = Stopwatch.createStarted();
-            log.info(logStr, " begin key=", redisKey);
-            jedis = RedisUtil.getJedis();
-            if (jedis != null) {
-                container = jedis.smembers(redisKey);
-                log.info(logStr, " size=", container == null ? 0 : container.size());
-            }
-            log.info(logStr, " finish, took:" + stopwatch.toString());
-        } catch (Exception ex) {
-            log.error(logStr, " act=updateCache_error, ex=", E2s.exception2String(ex));
-        } finally {
-            if (jedis != null) {
-                jedis.close();
-            }
-        }
-        return container;
     }
 }
