@@ -101,7 +101,7 @@ public class ResponseUtils {
         if (StringUtils.isNotEmpty(callback)) {
             json.append(request.getParameter("callback")).append("(");
             json.append("{").append("\"respCode\":").append(code).append(",\"respData\":").append(JSONObject.toJSONString(object)).append(",\"errMsg\":").append("\"").append(StringUtils.isEmpty(errorMsg) ? "" : errorMsg).append("\"").append("})");
-
+            response.setStatus(500);
             writeText(response, json.toString());
         } else {
             writeJson(response, object);

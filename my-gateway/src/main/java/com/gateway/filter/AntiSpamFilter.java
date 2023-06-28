@@ -19,6 +19,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class AntiSpamFilter implements Filter {
@@ -27,9 +30,23 @@ public class AntiSpamFilter implements Filter {
     private static volatile Set<String> ipSet = Sets.newHashSet();//从缓存内获取的封禁IP
     private static volatile Set<String> ipSet_1 = Sets.newHashSet();//从antispider服务获取的封禁IP
     private static volatile Set<String> uidSet = Sets.newHashSet();
-
+    private static final long PERIOD = 30L * 1000;
+    private static final long DELAY = 0;
     public AntiSpamFilter() {
+        initCache();
+    }
 
+    public void initCache() {
+
+        /* 单线程后台定期更新缓存 */
+        ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+        service.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                log.debug("refresh anti spam cache");
+                refreshCaches();
+            }
+        }, DELAY, PERIOD, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -119,7 +136,7 @@ public class AntiSpamFilter implements Filter {
             }
         }
         //反作弊拦截
-        if (isContainsIp("filter2", ip) || isContainsDeviceId(deviceId) || isContainsUid(uid)) {
+        if (isContainsIp("AntispamFilter", ip) || isContainsDeviceId(deviceId) || isContainsUid(uid)) {
             try {
                 ResponseUtils.buildErrorResult(httpReq, httpResp, "身份校验失败，请重试或重新登录");
             } catch (IOException e) {
