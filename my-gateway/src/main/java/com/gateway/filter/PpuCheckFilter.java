@@ -37,41 +37,41 @@ public class PpuCheckFilter implements Filter {
         }
 
         //获取Seesion
-        Cookie[] cookies = httpReq.getCookies();
-        String session = "";
-        Long uid = null;
-        if (cookies != null && cookies.length > 0) {
-            log.info(" act=PpuCheckFilter.doFilter ", " cookies 为空 >>>", " <<<<");
-            for (Cookie cookie : cookies) {
-                if ("uid".equals(cookie.getName())) {
-                    uid = Long.valueOf(cookie.getValue());
-                }
-                if ("session".equals(cookie.getName())) {
-                    session = cookie.getValue();
-                }
-            }
-        }
-
-        boolean checkResult = checkPpu(session, uid, httpReq, httpResp);
-
-        long logid = genLogId(uid); //随机数
-        //产生logstr
-        StringBuilder logsb = new StringBuilder()
-                .append(" logid=").append(logid)
-                .append(" ip=").append(RequestUtils.getRemoteAddr(httpReq))
-                .append(" cmd=").append(httpReq.getRequestURI());
-        String logStr = logsb.toString();
-        httpReq.setAttribute(Constant.LOG_STRING, logStr);
-        httpReq.setAttribute(Constant.LOG_ID, logid);
-
-        if (!checkResult) {
-            try {
-                ResponseUtils.buildErrorResult(httpReq, httpResp, "身份校验失败，请重试或重新登录");
-            } catch (IOException e) {
-                throw e;
-            }
-            return;
-        }
+//        Cookie[] cookies = httpReq.getCookies();
+//        String session = "";
+//        Long uid = null;
+//        if (cookies != null && cookies.length > 0) {
+//            log.info(" act=PpuCheckFilter.doFilter ", " cookies 为空 >>>", " <<<<");
+//            for (Cookie cookie : cookies) {
+//                if ("uid".equals(cookie.getName())) {
+//                    uid = Long.valueOf(cookie.getValue());
+//                }
+//                if ("session".equals(cookie.getName())) {
+//                    session = cookie.getValue();
+//                }
+//            }
+//        }
+//
+//        boolean checkResult = checkPpu(session, uid, httpReq, httpResp);
+//
+//        long logid = genLogId(uid); //随机数
+//        //产生logstr
+//        StringBuilder logsb = new StringBuilder()
+//                .append(" logid=").append(logid)
+//                .append(" ip=").append(RequestUtils.getRemoteAddr(httpReq))
+//                .append(" cmd=").append(httpReq.getRequestURI());
+//        String logStr = logsb.toString();
+//        httpReq.setAttribute(Constant.LOG_STRING, logStr);
+//        httpReq.setAttribute(Constant.LOG_ID, logid);
+//
+//        if (!checkResult) {
+//            try {
+//                ResponseUtils.buildErrorResult(httpReq, httpResp, "身份校验失败，请重试或重新登录");
+//            } catch (IOException e) {
+//                throw e;
+//            }
+//            return;
+//        }
 
         filterChain.doFilter(servletRequest, servletResponse);
     }

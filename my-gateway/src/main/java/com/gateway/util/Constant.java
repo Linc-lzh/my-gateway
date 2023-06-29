@@ -27,4 +27,7 @@ public class Constant {
     final public static String REQ_TOKEN = "token";
 
     final public static String TOKEN_MDS_STR = "WEREFMOEGMFWEG";
+
+    final public static String FILE_TYPE = "file";
+    final public static String JAR_TYPE = "jar";
 }
