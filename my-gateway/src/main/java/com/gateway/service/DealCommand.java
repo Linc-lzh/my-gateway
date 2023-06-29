@@ -32,7 +32,7 @@ public class DealCommand {
     private static Map<String, Object> serverCache = new HashMap<>();
     private static Map<String, Method> methodCache = new HashMap<>();
 
-    @HystrixCommand(fallbackMethod = "CommandFallBack",
+    @HystrixCommand(fallbackMethod = "commandFallBack",
             commandProperties = {
                     @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "50"),
                     @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "1440"),
@@ -61,43 +61,43 @@ public class DealCommand {
             return retStr;
         }
 
+        JSONObject confJson = (JSONObject) scan.getCmdMap().get(command);
+        //判断请求是否注册
+        if (null == confJson || 0 == confJson.size()) {
+            log.error(logPre + "no_command_found");
+            retJson.put(Constant.JSON_RESP_CODE, Constant.RESP_CODE_LEAK_PARAM);
+            retJson.put(Constant.JSON_ERROR_MSG, "请求参数非法");
+            retStr = retJson.toString();
+            return retStr;
+        }
 
-//        JsonObject confJson = (JsonObject) scan.getCmdMap().get(command);
-//        //判断请求是否注册
-//        if (null == confJson || 0 == confJson.size()) {
-//            log.error(logPre + "no_command_found");
-//            retJson.addProperty(Constant.JSON_RESP_CODE, Constant.RESP_CODE_LEAK_PARAM);
-//            retJson.addProperty(Constant.JSON_ERROR_MSG, "请求参数非法");
-//            retStr = retJson.toString();
-//            return retStr;
-//        }
-//
-//        String serverClass = confJson.get(AnnotationScan.DEFAULT_RPCCLASS_NAME).getAsString();
-//
-//        Object server = getRpcServer(confJson);  //反射缓存
-//        Method method = null;
-//        method = getRpcMethod(confJson, serverClass); //反射缓存
-//        if (null == method) {
-//            log.error(logPre + "err=dubbo_reflect_error");
-//            retJson.addProperty(Constant.JSON_RESP_CODE, Constant.RESP_CODE_LEAK_PARAM);
-//            retJson.addProperty(Constant.JSON_ERROR_MSG, "服务端错误，请稍后重试");
-//            retStr = retJson.toString();
-//            return retStr;
-//        }
-//
-//        try {
-//            retStr = (String) method.invoke(server, paramMap);
-//        } catch (IllegalAccessException e) {
-//            log.error(logPre + E2s.exception2String(e));
-//        } catch (InvocationTargetException e) {
-//            log.error(logPre + E2s.exception2String(e));
-//        }
-//        if (null == retStr) {
-//            retJson.addProperty(Constant.JSON_RESP_CODE, Constant.RESP_CODE_SERVER_ERROR);
-//            retJson.addProperty(Constant.JSON_ERROR_MSG, "服务端错误，请稍后重试");
-//            retStr = retJson.toString();
-//            return retStr;
-//        }
+        String serverClass = confJson.get(AnnotationScan.DEFAULT_RPCCLASS_NAME).toString();
+
+        Object server = getRpcServer(confJson);  //反射缓存
+        Method method = null;
+        method = getRpcMethod(confJson, serverClass); //反射缓存
+        if (null == method) {
+            log.error(logPre + "err=dubbo_reflect_error");
+            retJson.put(Constant.JSON_RESP_CODE, Constant.RESP_CODE_LEAK_PARAM);
+            retJson.put(Constant.JSON_ERROR_MSG, "服务端错误，请稍后重试");
+            retStr = retJson.toString();
+            return retStr;
+        }
+
+        try {
+            retStr = (String) method.invoke(server, paramMap);
+        } catch (IllegalAccessException e) {
+            log.error(logPre + E2s.exception2String(e));
+        } catch (InvocationTargetException e) {
+            log.error(logPre + E2s.exception2String(e));
+        }
+
+        if (null == retStr) {
+            retJson.put(Constant.JSON_RESP_CODE, Constant.RESP_CODE_SERVER_ERROR);
+            retJson.put(Constant.JSON_ERROR_MSG, "服务端错误，请稍后重试");
+            retStr = retJson.toString();
+            return retStr;
+        }
 
         return retStr;
     }
@@ -132,7 +132,8 @@ public class DealCommand {
                 scfObject = Proxy.newProxyInstance(DealCommand.class.getClassLoader(), new Class[]{Class.forName(scfClass)}, new InvocationHandler() {
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        return null;
+                        //TODO: Call RPC method
+                        return "Request completed";
                     }
                 });  //获取代理对象
                 serverCache.put(mapKey, scfObject); //避免重复初始化
